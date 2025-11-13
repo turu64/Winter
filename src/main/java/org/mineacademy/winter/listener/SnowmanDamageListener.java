@@ -1,20 +1,29 @@
 package org.mineacademy.winter.listener;
 
-import org.bukkit.entity.Snowman;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.mineacademy.winter.settings.Settings;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.jetbrains.annotations.NotNull;
+import org.mineacademy.winter.Winter;
+import org.mineacademy.winter.core.config.WinterConfig;
 
-public class SnowmanDamageListener implements Listener {
+public final class SnowmanDamageListener implements Listener {
+    private final Winter plugin;
 
-	@EventHandler
-	public void onDamage(EntityDamageEvent e) {
-		if (!Settings.ALLOWED_WORLDS.contains(e.getEntity().getWorld().getName()))
-			return;
+    public SnowmanDamageListener(@NotNull Winter plugin) {
+        this.plugin = plugin;
+    }
 
-		if (e.getEntity() instanceof Snowman && e.getCause() == DamageCause.MELTING)
-			e.setCancelled(true);
-	}
+    @EventHandler
+    public void onSnowballHit(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Snowball snowball) {
+            if (snowball.getShooter() instanceof org.bukkit.entity.Snowman) {
+                double damage = WinterConfig.get().snowman().damage().snowball();
+                event.setDamage(damage);
+            }
+        }
+    }
 }

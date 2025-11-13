@@ -3,17 +3,21 @@ package org.mineacademy.winter.listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFadeEvent;
-import org.mineacademy.fo.remain.CompMaterial;
-import org.mineacademy.winter.settings.Settings;
+import org.jetbrains.annotations.NotNull;
+import org.mineacademy.winter.Winter;
+import org.mineacademy.winter.core.config.WinterConfig;
 
-public class MeltingListener implements Listener {
+public final class MeltingListener implements Listener {
+    private final Winter plugin;
 
-	@EventHandler
-	public void onBlockFade(BlockFadeEvent e) {
-		if (!Settings.ALLOWED_WORLDS.contains(e.getBlock().getWorld().getName()))
-			return;
+    public MeltingListener(@NotNull Winter plugin) {
+        this.plugin = plugin;
+    }
 
-		if (Settings.Terrain.PREVENT_MELTING.contains(CompMaterial.fromBlock(e.getBlock())))
-			e.setCancelled(true);
-	}
+    @EventHandler
+    public void onBlockMelt(BlockFadeEvent event) {
+        if (WinterConfig.get().terrain().preventMelting().contains(event.getBlock().getType())) {
+            event.setCancelled(true);
+        }
+    }
 }

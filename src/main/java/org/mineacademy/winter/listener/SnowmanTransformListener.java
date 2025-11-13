@@ -1,23 +1,34 @@
 package org.mineacademy.winter.listener;
 
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Snowman;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.mineacademy.fo.RandomUtil;
-import org.mineacademy.winter.settings.Settings;
+import org.jetbrains.annotations.NotNull;
+import org.mineacademy.winter.Winter;
+import org.mineacademy.winter.core.config.WinterConfig;
 
-public class SnowmanTransformListener implements Listener {
+import java.util.concurrent.ThreadLocalRandom;
 
-	@EventHandler
-	public void onMobSpawn(CreatureSpawnEvent e) {
-		if (!Settings.ALLOWED_WORLDS.contains(e.getLocation().getWorld().getName()))
-			return;
+public final class SnowmanTransformListener implements Listener {
+    private final Winter plugin;
 
-		if (Settings.Snowman.Transform.ALLOWED.contains(e.getEntityType()) && RandomUtil.chance(Settings.Snowman.Transform.CHANCE)) {
-			e.setCancelled(true);
+    public SnowmanTransformListener(@NotNull Winter plugin) {
+        this.plugin = plugin;
+    }
 
-			e.getLocation().getWorld().spawn(e.getLocation(), Snowman.class);
-		}
-	}
+    @EventHandler
+    public void onCreatureSpawn(CreatureSpawnEvent event) {
+        var config = WinterConfig.get().snowman().transform();
+        if (!config.enabled()) return;
+
+        if (config.applicable().contains(event.getEntityType())) {
+            int chance = ThreadLocalRandom.current().nextInt(100);
+            if (chance < config.chancePercent()) {
+                event.setCancelled(true);
+                event.getLocation().getWorld().spawnEntity(event.getLocation(), EntityType.SNOWMAN);
+            }
+        }
+    }
 }

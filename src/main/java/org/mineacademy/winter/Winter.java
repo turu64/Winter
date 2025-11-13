@@ -1,144 +1,239 @@
 package org.mineacademy.winter;
 
-import java.util.Arrays;
-import java.util.List;
-
+import lombok.Getter;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.weather.WeatherChangeEvent;
-import org.mineacademy.fo.Common;
-import org.mineacademy.fo.MinecraftVersion;
-import org.mineacademy.fo.MinecraftVersion.V;
-import org.mineacademy.fo.model.HookManager;
-import org.mineacademy.fo.model.SpigotUpdater;
-import org.mineacademy.fo.plugin.SimplePlugin;
-import org.mineacademy.fo.settings.YamlStaticConfig;
-import org.mineacademy.winter.commands.WinterCommandGroup;
-import org.mineacademy.winter.hook.ProtocolLibBiomeHook;
-import org.mineacademy.winter.listener.ChestListener;
-import org.mineacademy.winter.listener.MeltingListener;
-import org.mineacademy.winter.listener.SnowmanDamageListener;
-import org.mineacademy.winter.listener.SnowmanDealDamageListener;
-import org.mineacademy.winter.listener.SnowmanTargetListener;
-import org.mineacademy.winter.listener.SnowmanTransformListener;
-import org.mineacademy.winter.listener.WinterListener;
-import org.mineacademy.winter.model.data.ChestData;
-import org.mineacademy.winter.model.data.PlayerData;
-import org.mineacademy.winter.model.task.TaskParticleSnow;
-import org.mineacademy.winter.model.task.TaskTerrain;
-import org.mineacademy.winter.model.task.TaskWeather;
-import org.mineacademy.winter.psycho.PsychoMob;
-import org.mineacademy.winter.settings.Localization;
-import org.mineacademy.winter.settings.Settings;
-import org.mineacademy.winter.util.SnowStorm;
+import org.jetbrains.annotations.NotNull;
+import org.mineacademy.winter.command.WinterCommandHandler;
+import org.mineacademy.winter.core.WinterPlugin;
+import org.mineacademy.winter.core.config.Messages;
+import org.mineacademy.winter.core.config.WinterConfig;
+import org.mineacademy.winter.data.ChestDataManager;
+import org.mineacademy.winter.data.PlayerDataManager;
+import org.mineacademy.winter.listener.*;
+import org.mineacademy.winter.task.ParticleSnowTask;
+import org.mineacademy.winter.task.TerrainTask;
+import org.mineacademy.winter.task.WeatherTask;
 
-import lombok.Getter;
+import java.util.logging.Level;
 
-public class Winter extends SimplePlugin {
+/**
+ * Winter Plugin - Modern Edition
+ * Minecraft server winter wonderland plugin for Paper 1.21.4
+ *
+ * @author kangarko
+ * @version 3.0.0
+ */
+public final class Winter extends WinterPlugin implements Listener {
 
-	@Getter
-	private final WinterCommandGroup mainCommand = new WinterCommandGroup();
+    @Getter
+    private WinterCommandHandler commandHandler;
 
-	@Override
-	public V getMinimumVersion() {
-		return V.v1_7;
-	}
+    @Getter
+    private PlayerDataManager playerDataManager;
 
-	@Override
-	protected String[] getStartupLogo() {
-		return new String[] {
-				"&f_ _ _ _ _  _ ___ ____ ____ ",
-				"&f| | | | |\\ |  |  |___ |__/ ",
-				"&7|_|_| | | \\|  |  |___ |  \\ ",
-				" ",
-		};
-	}
+    @Getter
+    private ChestDataManager chestDataManager;
 
-	@Override
-	protected void onPluginStart() {
-		Common.runLater(ChestData::$);
+    // Task IDs for scheduler
+    private int particleTaskId = -1;
+    private int terrainTaskId = -1;
+    private int weatherTaskId = -1;
 
-		registerEvents(new WinterListener());
-		registerEvents(new ChestListener());
-		registerEventsIf(new PsychoMob(), PsychoMob.IS_COMPATIBLE);
+    @Override
+    protected void onPluginStart() {
+        // Load configuration
+        log(Level.INFO, "Loading configuration...");
+        WinterConfig.load(this);
 
-		Common.log(
-				"&fGet Support:",
-				"&6https://github.com/kangarko/Winter/issues",
-				Common.consoleLineSmooth());
-	}
+        // Load messages
+        log(Level.INFO, "Loading messages...");
+        Messages.load(this, WinterConfig.get().locale());
 
-	@Override
-	protected void onPluginReload() {
-		PlayerData.$();
-		ChestData.$();
-	}
+        // Initialize data managers
+        log(Level.INFO, "Initializing data managers...");
+        playerDataManager = new PlayerDataManager(this);
+        chestDataManager = new ChestDataManager(this);
 
-	@Override
-	protected void onReloadablesStart() {
+        // Load data
+        playerDataManager.loadAll();
+        chestDataManager.loadAll();
 
-		// Events
-		if (Settings.Snowman.DISABLE_MELT_DAMAGE)
-			registerEvents(new SnowmanDamageListener());
+        // Register listeners
+        log(Level.INFO, "Registering event listeners...");
+        registerListeners();
 
-		if (Settings.Snowman.PREVENT_TARGET)
-			registerEvents(new SnowmanTargetListener());
+        // Register commands
+        log(Level.INFO, "Registering commands...");
+        commandHandler = new WinterCommandHandler(this);
+        commandHandler.register();
 
-		if (Settings.Snowman.Transform.ENABLED)
-			registerEvents(new SnowmanTransformListener());
+        // Start tasks
+        log(Level.INFO, "Starting background tasks...");
+        startTasks();
 
-		if (Settings.Snowman.Damage.SNOWBALL > 0)
-			registerEvents(new SnowmanDealDamageListener());
+        log(Level.INFO, "Winter plugin fully initialized!");
+    }
 
-		if (!Settings.Terrain.PREVENT_MELTING.isEmpty())
-			registerEvents(new MeltingListener());
+    @Override
+    protected void onPluginStop() {
+        // Stop tasks
+        stopTasks();
 
-		if (!Settings.Weather.SNOW_STORM)
-			SnowStorm.cleanAll();
+        // Save data
+        if (playerDataManager != null) {
+            playerDataManager.saveAll();
+        }
+        if (chestDataManager != null) {
+            chestDataManager.saveAll();
+        }
 
-		// Packets
-		if (Settings.Terrain.Biomes.ENABLED && MinecraftVersion.atLeast(V.v1_11))
-			if (HookManager.isProtocolLibLoaded())
-				new ProtocolLibBiomeHook();
-			else
-				Common.log("&cCannot enable disguising biomes because the plugin ProtocolLib is missing ...");
+        log(Level.INFO, "Winter plugin shutdown complete!");
+    }
 
-		// Tasks
-		if (Settings.Snow.ENABLED)
-			Common.runTimer(20, Settings.Snow.PERIOD, new TaskParticleSnow());
+    @Override
+    protected void onPluginReload() {
+        // Stop existing tasks
+        stopTasks();
 
-		if (Settings.Terrain.SnowGeneration.ENABLED)
-			Common.runTimer(20, Settings.Terrain.SnowGeneration.PERIOD, new TaskTerrain());
+        // Reload configuration
+        WinterConfig.load(this);
+        Messages.load(this, WinterConfig.get().locale());
 
-		if (Settings.Weather.DISABLE || Settings.Weather.SNOW_STORM)
-			Common.runTimer(20, 20 * 10, new TaskWeather());
-	}
+        // Reload data
+        playerDataManager.reload();
+        chestDataManager.reload();
 
-	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-	public void onWeatherChange(WeatherChangeEvent event) {
-		if (!event.toWeatherState())
-			return;
+        // Restart tasks
+        startTasks();
 
-		if (Settings.Weather.DISABLE && Settings.ALLOWED_WORLDS.contains(event.getWorld().getName())) {
-			event.setCancelled(true);
+        log(Level.INFO, "Winter plugin reloaded!");
+    }
 
-			event.getWorld().setWeatherDuration(0);
-			event.getWorld().setThundering(false);
-		}
-	}
+    /**
+     * Register all event listeners
+     */
+    private void registerListeners() {
+        var config = WinterConfig.get();
+        var server = getServer();
+        var pm = server.getPluginManager();
 
-	@Override
-	public SpigotUpdater getUpdateCheck() {
-		return new SpigotUpdater(49646);
-	}
+        // Core listeners (always registered)
+        pm.registerEvents(this, this); // Weather listener
+        pm.registerEvents(new ChestListener(this), this);
 
-	@Override
-	public final List<Class<? extends YamlStaticConfig>> getSettings() {
-		return Arrays.asList(Settings.class, Localization.class);
-	}
+        // Conditional listeners based on configuration
+        if (config.snowman().disableMeltDamage()) {
+            pm.registerEvents(new SnowmanMeltListener(), this);
+            log(Level.INFO, "Registered snowman melt protection listener");
+        }
 
-	@Override
-	public final int getFoundedYear() {
-		return 2017; // 15.11.2017 - 16.11 released beast!
-	}
+        if (config.snowman().preventTarget()) {
+            pm.registerEvents(new SnowmanTargetListener(), this);
+            log(Level.INFO, "Registered snowman target prevention listener");
+        }
+
+        if (config.snowman().transform().enabled()) {
+            pm.registerEvents(new SnowmanTransformListener(this), this);
+            log(Level.INFO, "Registered snowman transform listener");
+        }
+
+        if (config.snowman().damage().snowball() > 0) {
+            pm.registerEvents(new SnowmanDamageListener(this), this);
+            log(Level.INFO, "Registered snowman damage listener");
+        }
+
+        if (!config.terrain().preventMelting().isEmpty()) {
+            pm.registerEvents(new MeltingListener(this), this);
+            log(Level.INFO, "Registered melting prevention listener");
+        }
+    }
+
+    /**
+     * Start all background tasks
+     */
+    private void startTasks() {
+        var config = WinterConfig.get();
+
+        // Snow particle task
+        if (config.snow().enabled()) {
+            var task = new ParticleSnowTask(this);
+            particleTaskId = getServer().getScheduler()
+                .scheduleSyncRepeatingTask(this, task, 20L, config.snow().periodTicks());
+            log(Level.INFO, "Started snow particle task (period: " + config.snow().periodTicks() + " ticks)");
+        }
+
+        // Terrain task
+        if (config.terrain().snowGeneration().enabled()) {
+            var task = new TerrainTask(this);
+            terrainTaskId = getServer().getScheduler()
+                .scheduleSyncRepeatingTask(this, task, 20L, config.terrain().snowGeneration().periodTicks());
+            log(Level.INFO, "Started terrain task (period: " + config.terrain().snowGeneration().periodTicks() + " ticks)");
+        }
+
+        // Weather task
+        if (config.weather().disable() || config.weather().snowStorm()) {
+            var task = new WeatherTask(this);
+            weatherTaskId = getServer().getScheduler()
+                .scheduleSyncRepeatingTask(this, task, 20L, 200L); // Every 10 seconds
+            log(Level.INFO, "Started weather control task");
+        }
+    }
+
+    /**
+     * Stop all background tasks
+     */
+    private void stopTasks() {
+        var scheduler = getServer().getScheduler();
+
+        if (particleTaskId != -1) {
+            scheduler.cancelTask(particleTaskId);
+            particleTaskId = -1;
+        }
+
+        if (terrainTaskId != -1) {
+            scheduler.cancelTask(terrainTaskId);
+            terrainTaskId = -1;
+        }
+
+        if (weatherTaskId != -1) {
+            scheduler.cancelTask(weatherTaskId);
+            weatherTaskId = -1;
+        }
+    }
+
+    /**
+     * Weather change event handler
+     * Prevents rain/thunderstorm when weather control is enabled
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onWeatherChange(@NotNull WeatherChangeEvent event) {
+        var config = WinterConfig.get();
+
+        // Only cancel if weather is changing TO rain/storm
+        if (!event.toWeatherState()) {
+            return;
+        }
+
+        // Check if world is allowed
+        if (!config.isWorldAllowed(event.getWorld().getName())) {
+            return;
+        }
+
+        // Cancel weather change if disabled
+        if (config.weather().disable()) {
+            event.setCancelled(true);
+            event.getWorld().setWeatherDuration(0);
+            event.getWorld().setThundering(false);
+        }
+    }
+
+    /**
+     * Get the Winter instance
+     */
+    public static Winter getInstance() {
+        return (Winter) WinterPlugin.getInstance();
+    }
 }

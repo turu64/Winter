@@ -2,10 +2,24 @@ name: ${project.artifactId}
 main: ${main.class}
 version: ${project.version}
 author: kangarko
-api-version: 1.13
-softdepend: [AuthMe, BungeeChatAPI, DiscordSRV, Factions, Feudal, Essentials, LegacyFactions, LuckPerms, MVdWPlaceholderAPI, Multiverse-Core, Nicky, PlaceholderAPI, ProtocolLib, SimpleClans, Towny, TownyChat, Vault, WorldEdit]
-#
-# The commands are built at runtime so you can change them easily within the settings.
-# Do not change anything in here, you will break the plugin and get no support.
-#
-commands: 
+api-version: '1.21'
+website: https://github.com/kangarko/Winter
+softdepend: [AuthMe, DiscordSRV, Essentials, LuckPerms, PlaceholderAPI, Multiverse-Core, Towny, Vault, WorldEdit]
+
+commands:
+  winter:
+    description: Main Winter plugin command
+    usage: /<command> [snow|reload|help]
+    aliases: [wt]
+    permission: winter.use
+
+permissions:
+  winter.use:
+    description: Use basic Winter commands
+    default: true
+  winter.reload:
+    description: Reload Winter configuration
+    default: op
+  winter.chest.break:
+    description: Break Winter chests
+    default: op 

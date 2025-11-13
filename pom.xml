@@ -5,29 +5,56 @@
 
 	<groupId>org.mineacademy</groupId>
 	<artifactId>Winter</artifactId>
-	<version>2.5.6</version>
+	<version>3.0.0</version>
 	<packaging>jar</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>21</maven.compiler.source>
+		<maven.compiler.target>21</maven.compiler.target>
+		<maven.compiler.release>21</maven.compiler.release>
 		<plugin.name>winter</plugin.name>
 		<main.class>${project.groupId}.${plugin.name}.${project.artifactId}</main.class>
 	</properties>
 
+	<repositories>
+		<repository>
+			<id>papermc</id>
+			<url>https://repo.papermc.io/repository/maven-public/</url>
+		</repository>
+	</repositories>
+
 	<dependencies>
-		<!-- Paper is required for Psycho NMS access -->
+		<!-- Paper API -->
 		<dependency>
-			<groupId>org.mineacademy.server</groupId>
-			<artifactId>Paper</artifactId>
-			<version>Paper-1.16.4-SNAPSHOT-311</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/library/Paper-1.16.4-SNAPSHOT-311.jar</systemPath>
+			<groupId>io.papermc.paper</groupId>
+			<artifactId>paper-api</artifactId>
+			<version>1.21.4-R0.1-SNAPSHOT</version>
+			<scope>provided</scope>
 		</dependency>
 
+		<!-- Lombok for boilerplate reduction -->
 		<dependency>
-			<groupId>org.mineacademy</groupId>
-			<artifactId>Foundation</artifactId>
-			<version>LATEST</version>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.34</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- Annotations -->
+		<dependency>
+			<groupId>org.jetbrains</groupId>
+			<artifactId>annotations</artifactId>
+			<version>24.1.0</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- Configuration library (SnakeYAML for modern YAML handling) -->
+		<dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+			<version>2.2</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
@@ -36,21 +63,25 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>3.4.2</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
+				<version>3.13.0</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>21</source>
+					<target>21</target>
+					<release>21</release>
+					<compilerArgs>
+						<arg>--enable-preview</arg>
+					</compilerArgs>
 				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.2.4</version>
+				<version>3.6.0</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -61,20 +92,16 @@
 				</executions>
 				<configuration>
 					<createDependencyReducedPom>false</createDependencyReducedPom>
-					<artifactSet>
-						<includes>
-							<include>org.mineacademy:Foundation*</include>
-						</includes>
-					</artifactSet>
-					<relocations>
-						<relocation>
-							<pattern>org.mineacademy</pattern>
-							<shadedPattern>org.mineacademy.${plugin.name}.lib</shadedPattern>
+					<filters>
+						<filter>
+							<artifact>*:*</artifact>
 							<excludes>
-								<exclude>org.mineacademy.${plugin.name}.*</exclude>
+								<exclude>META-INF/*.SF</exclude>
+								<exclude>META-INF/*.DSA</exclude>
+								<exclude>META-INF/*.RSA</exclude>
 							</excludes>
-						</relocation>
-					</relocations>
+						</filter>
+					</filters>
 				</configuration>
 			</plugin>
 		</plugins>
