@@ -13,8 +13,8 @@ import org.mineacademy.winter.core.config.WinterConfig;
 import org.mineacademy.winter.data.ChestDataManager;
 import org.mineacademy.winter.data.PlayerDataManager;
 import org.mineacademy.winter.listener.*;
+import org.mineacademy.winter.task.AsyncTerrainTask;
 import org.mineacademy.winter.task.ParticleSnowTask;
-import org.mineacademy.winter.task.TerrainTask;
 import org.mineacademy.winter.task.WeatherTask;
 
 import java.util.logging.Level;
@@ -177,12 +177,16 @@ public final class Winter extends WinterPlugin implements Listener {
             log(Level.INFO, "Started snow particle task (period: " + config.snow().periodTicks() + " ticks)");
         }
 
-        // Terrain task
+        // Terrain task (async optimized)
         if (config.terrain().snowGeneration().enabled()) {
-            var task = new TerrainTask(this);
+            var task = new AsyncTerrainTask(this);
             terrainTaskId = getServer().getScheduler()
                 .scheduleSyncRepeatingTask(this, task, 20L, config.terrain().snowGeneration().periodTicks());
-            log(Level.INFO, "Started terrain task (period: " + config.terrain().snowGeneration().periodTicks() + " ticks)");
+
+            String mode = config.terrain().snowGeneration().useAsyncProcessing() ? "async" : "sync";
+            log(Level.INFO, "Started terrain task in " + mode + " mode (period: " +
+                config.terrain().snowGeneration().periodTicks() + " ticks, batch: " +
+                config.terrain().snowGeneration().batchSize() + ")");
         }
 
         // Weather task

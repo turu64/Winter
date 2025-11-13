@@ -121,6 +121,11 @@ Terrain:
     # Do not melt snow in naturally snowy biomes or above height 90?
     Only_Melt_Unnatural_Snow: true
 
+    # Only melt snow placed by this plugin? (protects player-built snow structures)
+    # When enabled, snow placed by players will NOT be melted
+    # Recommended: true (protects builds)
+    Only_Melt_Plugin_Snow: true
+
     # Transform water into ice or ice into water (when Melt is enabled)?
     Freeze_Water: true
 
@@ -157,6 +162,20 @@ Terrain:
     # What biomes should we ignore?
     # List: https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/Biome.html
     Ignore_Biomes: []
+
+    # ----------------------------------------------------------------------------------------
+    # PERFORMANCE OPTIMIZATION SETTINGS (Paper 1.21.4+)
+    # ----------------------------------------------------------------------------------------
+
+    # Use asynchronous processing for snow generation?
+    # This moves heavy calculations off the main thread, improving server TPS
+    # Recommended: true (significant performance boost)
+    Use_Async_Processing: true
+
+    # How many blocks to process per batch in async mode?
+    # Higher = faster but more CPU burst, Lower = smoother but slower
+    # Recommended: 50-200 depending on server specs
+    Batch_Size: 100
 
   # Make your map biomes look like it's full of "cold winter biomes" (makes even desert *cold*)
   # NO CHANGES ARE DONE TO YOUR MAP, THIS IS ONLY DISGUISED FOR YOUR PLAYERS!

@@ -46,6 +46,7 @@ public final class WinterConfig {
         boolean enabled,
         boolean melt,
         boolean onlyMeltUnnaturalSnow,
+        boolean onlyMeltPluginSnow,
         boolean freezeWater,
         boolean destroyCrops,
         int periodTicks,
@@ -54,7 +55,9 @@ public final class WinterConfig {
         int requiredNeighborsToGrow,
         Set<Material> doNotPlaceOn,
         Set<Biome> ignoreBiomes,
-        Map<Set<Material>, Set<Material>> freezeIgnore
+        Map<Set<Material>, Set<Material>> freezeIgnore,
+        boolean useAsyncProcessing,
+        int batchSize
     ) {}
 
     // Terrain Configuration
@@ -262,8 +265,8 @@ public final class WinterConfig {
     private static SnowGenerationConfig loadSnowGeneration() {
         ConfigurationSection section = config.getConfigurationSection("Terrain.Snow_Generation");
         if (section == null) {
-            return new SnowGenerationConfig(true, false, true, true, false, 40, 3, true, 2,
-                Set.of(), Set.of(), Map.of());
+            return new SnowGenerationConfig(true, false, true, true, true, false, 40, 3, true, 2,
+                Set.of(), Set.of(), Map.of(), true, 100);
         }
 
         // Parse Do_Not_Place_On materials
@@ -299,6 +302,7 @@ public final class WinterConfig {
             section.getBoolean("Enabled", true),
             section.getBoolean("Melt", false),
             section.getBoolean("Only_Melt_Unnatural_Snow", true),
+            section.getBoolean("Only_Melt_Plugin_Snow", true),
             section.getBoolean("Freeze_Water", true),
             section.getBoolean("Destroy_Crops", false),
             section.getInt("Period_Ticks", 40),
@@ -307,7 +311,9 @@ public final class WinterConfig {
             section.getInt("Required_Neighbors_To_Grow", 2),
             doNotPlaceOn,
             ignoreBiomes,
-            freezeIgnore
+            freezeIgnore,
+            section.getBoolean("Use_Async_Processing", true),
+            section.getInt("Batch_Size", 100)
         );
     }
 
