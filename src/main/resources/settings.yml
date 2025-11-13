@@ -156,6 +156,14 @@ Terrain:
     # Requires "Multi_Layer" on true
     Required_Neighbors_To_Grow: 2
 
+    # Maximum snow height in blocks (1 = 1 meter)
+    # Snow will stack up to this many blocks high
+    # 1 = Snow layers only (up to 1 block)
+    # 2 = Snow can stack 2 blocks high
+    # 3 = Snow can stack 3 blocks high (3 meters) - REALISTIC!
+    # Recommended: 3 for realistic deep snow
+    Max_Height: 3
+
     # Dot not place snow on the following blocks (material list, will match if contains):
     Do_Not_Place_On: [ICE, BARRIER, FENCE, STEP, SLAB, AIR, WATER, LAVA, SIGN, PANE, PLATE, STAIRS, TRAPDOOR]
 

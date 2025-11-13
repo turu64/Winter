@@ -212,7 +212,13 @@ public final class AsyncTerrainTask implements Runnable {
             return;
         }
 
-        // Place snow layer
+        // Check current snow height before placing
+        int currentHeight = getSnowHeight(topBlock);
+        if (currentHeight >= config.maxHeight()) {
+            return; // Already at max height
+        }
+
+        // Place snow layer on AIR or on top of SNOW_BLOCK (for multi-block stacking)
         if (above.getType() == Material.AIR) {
             above.setType(Material.SNOW);
 
@@ -226,6 +232,16 @@ public final class AsyncTerrainTask implements Runnable {
 
         } else if (config.multiLayer() && above.getType() == Material.SNOW) {
             growSnow(above, config);
+        } else if (config.multiLayer() && topType == Material.SNOW_BLOCK && above.getType() == Material.AIR) {
+            // Allow snow to stack on top of snow blocks (for multi-block height)
+            above.setType(Material.SNOW);
+
+            if (above.getBlockData() instanceof Snow snow) {
+                snow.setLayers(1);
+                above.setBlockData(snow);
+            }
+
+            SnowMetadataManager.markAsPluginPlaced(above);
         }
     }
 
@@ -239,9 +255,27 @@ public final class AsyncTerrainTask implements Runnable {
 
         int currentLayers = snow.getLayers();
         if (currentLayers >= snow.getMaximumLayers()) {
+            // Check current snow height before converting to snow block
+            int currentHeight = getSnowHeight(snowBlock);
+            if (currentHeight >= config.maxHeight()) {
+                return; // Already at max height, don't grow further
+            }
+
+            // Convert to snow block
             snowBlock.setType(Material.SNOW_BLOCK);
             // Mark snow block as plugin-placed
             SnowMetadataManager.markAsPluginPlaced(snowBlock);
+
+            // If not at max height, allow snow to continue growing on top
+            Block above = snowBlock.getRelative(BlockFace.UP);
+            if (above.getType() == Material.AIR && currentHeight + 1 < config.maxHeight()) {
+                above.setType(Material.SNOW);
+                if (above.getBlockData() instanceof Snow newSnow) {
+                    newSnow.setLayers(1);
+                    above.setBlockData(newSnow);
+                }
+                SnowMetadataManager.markAsPluginPlaced(above);
+            }
             return;
         }
 
@@ -465,6 +499,34 @@ public final class AsyncTerrainTask implements Runnable {
         }
 
         return hook.canSnowFallFast(block);
+    }
+
+    /**
+     * Calculate the current snow height at a location
+     * Returns the number of blocks of snow stacked (1-3+)
+     *
+     * @param block The block to check (can be snow or the block below snow)
+     * @return Height in blocks (0 = no snow, 1 = 1 block high, 2 = 2 blocks high, etc.)
+     */
+    private int getSnowHeight(@NotNull Block block) {
+        int height = 0;
+
+        // Check if current block is snow
+        if (block.getType() == Material.SNOW_BLOCK) {
+            height++;
+        } else if (block.getType() != Material.SNOW) {
+            // Not snow, return 0
+            return 0;
+        }
+
+        // Count snow blocks below
+        Block below = block.getRelative(BlockFace.DOWN);
+        while (below.getType() == Material.SNOW_BLOCK && height < 10) { // Max 10 to prevent infinite loop
+            height++;
+            below = below.getRelative(BlockFace.DOWN);
+        }
+
+        return height;
     }
 
     /**

@@ -108,6 +108,7 @@ All original features have been preserved and modernized:
 2. **Terrain Snow Generation**
    - Dynamic snow placement/removal
    - Multi-layer snow support
+   - **Multi-block stacking**: Snow can stack up to 3 meters (3 blocks) high for realistic deep snow
    - Water freezing
    - Crop protection
    - **WorldGuard Integration**: Automatically respects `snow-fall: deny` flags
@@ -259,7 +260,15 @@ Snow_Generation:
   Use_Async_Processing: true  # Enable async (recommended)
   Batch_Size: 100            # Blocks per batch
   Only_Melt_Plugin_Snow: true # Protect player builds
+  Max_Height: 3              # Maximum snow stack height (1-10 blocks)
 ```
+
+**Snow Stacking**:
+- `Max_Height: 1` - Snow layers only (traditional behavior)
+- `Max_Height: 2` - Snow can stack 2 blocks high
+- `Max_Height: 3` - Snow can stack 3 blocks high (realistic deep snow, recommended)
+- Snow naturally grows: layers → snow block → more layers on top → another snow block
+- Requires `Multi_Layer: true` to enable vertical stacking
 
 See `PERFORMANCE.md` for detailed tuning guide.
 

@@ -53,6 +53,7 @@ public final class WinterConfig {
         int radius,
         boolean multiLayer,
         int requiredNeighborsToGrow,
+        int maxHeight,
         Set<Material> doNotPlaceOn,
         Set<Biome> ignoreBiomes,
         Map<Set<Material>, Set<Material>> freezeIgnore,
@@ -265,7 +266,7 @@ public final class WinterConfig {
     private static SnowGenerationConfig loadSnowGeneration() {
         ConfigurationSection section = config.getConfigurationSection("Terrain.Snow_Generation");
         if (section == null) {
-            return new SnowGenerationConfig(true, false, true, true, true, false, 40, 3, true, 2,
+            return new SnowGenerationConfig(true, false, true, true, true, false, 40, 3, true, 2, 3,
                 Set.of(), Set.of(), Map.of(), true, 100);
         }
 
@@ -309,6 +310,7 @@ public final class WinterConfig {
             section.getInt("Radius", 3),
             section.getBoolean("Multi_Layer", true),
             section.getInt("Required_Neighbors_To_Grow", 2),
+            section.getInt("Max_Height", 3),
             doNotPlaceOn,
             ignoreBiomes,
             freezeIgnore,
