@@ -79,6 +79,11 @@ public final class TerrainTask implements Runnable {
     private void placeSnow(@NotNull Block topBlock, @NotNull WinterConfig.SnowGenerationConfig config) {
         Block above = topBlock.getRelative(BlockFace.UP);
 
+        // Check WorldGuard protection first
+        if (!canSnowFallHere(above)) {
+            return;
+        }
+
         // Check if we can place snow here
         if (!canPlaceSnow(topBlock, above, config)) {
             return;
@@ -302,5 +307,27 @@ public final class TerrainTask implements Runnable {
                material.name().contains("CACTUS") ||
                material.name().contains("BAMBOO") ||
                material == Material.FARMLAND;
+    }
+
+    /**
+     * Check if snow can fall at this location (WorldGuard integration)
+     *
+     * @param block The block where snow would be placed
+     * @return true if snow can fall (allowed or WorldGuard not present), false if denied
+     */
+    private boolean canSnowFallHere(@NotNull Block block) {
+        // Check if WorldGuard integration is enabled
+        if (!org.mineacademy.winter.hook.WorldGuardHook.isEnabled()) {
+            return true; // Allow if WorldGuard is not present
+        }
+
+        // Get WorldGuard hook and check snow-fall flag
+        var hook = org.mineacademy.winter.hook.WorldGuardHook.getInstance();
+        if (hook == null) {
+            return true; // Allow if hook is not initialized
+        }
+
+        // Check the snow-fall flag for this location
+        return hook.canSnowFallFast(block);
     }
 }

@@ -104,6 +104,8 @@ Terrain:
   Prevent_Melting: [ICE, SNOW_BLOCK, SNOW]
 
   # Covering your world with snow. Multiple layers are supported!
+  # WORLDGUARD INTEGRATION: If WorldGuard is installed, regions with "snow-fall: deny"
+  # flag will be automatically protected from snow generation. No configuration needed!
   Snow_Generation:
 
     # Randomly place snow onto blocks around the player.

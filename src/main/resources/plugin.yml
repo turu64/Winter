@@ -4,7 +4,7 @@ version: ${project.version}
 author: kangarko
 api-version: '1.21'
 website: https://github.com/kangarko/Winter
-softdepend: [AuthMe, DiscordSRV, Essentials, LuckPerms, PlaceholderAPI, Multiverse-Core, Towny, Vault, WorldEdit]
+softdepend: [AuthMe, DiscordSRV, Essentials, LuckPerms, PlaceholderAPI, Multiverse-Core, Towny, Vault, WorldEdit, WorldGuard]
 
 commands:
   winter:

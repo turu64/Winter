@@ -104,6 +104,7 @@ All original features have been preserved and modernized:
    - Multi-layer snow support
    - Water freezing
    - Crop protection
+   - **WorldGuard Integration**: Automatically respects `snow-fall: deny` flags
 
 3. **Gift Chests**
    - Public and private chests
@@ -148,6 +149,35 @@ Configuration files remain largely compatible with the original version:
 - `winter.use` - Use basic commands (default: true)
 - `winter.reload` - Reload configuration (default: op)
 - `winter.chest.break` - Break Winter chests (default: op)
+
+### Plugin Integrations
+
+#### WorldGuard Integration
+
+Winter automatically integrates with WorldGuard 7.0+ to respect region protection flags:
+
+**Snow-Fall Flag Protection**:
+- Regions with `snow-fall: deny` flag will NOT have snow generated
+- Works automatically - no configuration needed
+- Falls back gracefully if WorldGuard is not installed
+
+**Usage Example**:
+```
+/region flag spawn snow-fall deny
+```
+This prevents snow from accumulating in your spawn region while allowing it everywhere else.
+
+**Technical Details**:
+- Uses WorldGuard's native `snow-fall` flag
+- Check happens before any snow block placement
+- Zero performance impact when WorldGuard is not installed
+- Fully compatible with WorldGuard 7.0.11+
+
+**Benefits**:
+- Protect builds and specific areas from snow
+- Fine-grained control over where snow can accumulate
+- Works seamlessly with WorldGuard's region priorities
+- No additional configuration required
 
 ## Migration Notes
 

@@ -61,6 +61,10 @@ public final class Winter extends WinterPlugin implements Listener {
         playerDataManager.loadAll();
         chestDataManager.loadAll();
 
+        // Initialize plugin integrations
+        log(Level.INFO, "Initializing plugin integrations...");
+        initializeIntegrations();
+
         // Register listeners
         log(Level.INFO, "Registering event listeners...");
         registerListeners();
@@ -149,6 +153,14 @@ public final class Winter extends WinterPlugin implements Listener {
             pm.registerEvents(new MeltingListener(this), this);
             log(Level.INFO, "Registered melting prevention listener");
         }
+    }
+
+    /**
+     * Initialize plugin integrations (WorldGuard, etc.)
+     */
+    private void initializeIntegrations() {
+        // Initialize WorldGuard integration
+        org.mineacademy.winter.hook.WorldGuardHook.initialize(this);
     }
 
     /**
