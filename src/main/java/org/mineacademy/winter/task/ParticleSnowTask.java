@@ -95,11 +95,13 @@ public final class ParticleSnowTask implements Runnable {
 
         for (int i = 0; i < amount; i++) {
             // Random offset within horizontal range
-            double offsetX = random.nextDouble(-config.rangeHorizontal(), config.rangeHorizontal());
-            double offsetZ = random.nextDouble(-config.rangeHorizontal(), config.rangeHorizontal());
+            double rangeH = Math.max(0.1, config.rangeHorizontal()); // Ensure minimum range
+            double offsetX = random.nextDouble(-rangeH, rangeH);
+            double offsetZ = random.nextDouble(-rangeH, rangeH);
 
             // Random height within vertical range
-            double offsetY = random.nextDouble(0, config.rangeVertical());
+            double rangeV = Math.max(0.1, config.rangeVertical()); // Ensure minimum range
+            double offsetY = random.nextDouble(0, rangeV);
 
             Location particleLoc = playerLoc.clone().add(offsetX, offsetY, offsetZ);
 
@@ -122,10 +124,11 @@ public final class ParticleSnowTask implements Runnable {
                 }
             }
 
-            // Calculate velocity with chaos
-            double velocityX = random.nextDouble(-config.chaos(), config.chaos());
+            // Calculate velocity with chaos (ensure chaos is not zero)
+            double chaos = Math.max(0.001, config.chaos()); // Minimum chaos to avoid error
+            double velocityX = config.chaos() > 0 ? random.nextDouble(-chaos, chaos) : 0.0;
             double velocityY = -0.1; // Always fall down
-            double velocityZ = random.nextDouble(-config.chaos(), config.chaos());
+            double velocityZ = config.chaos() > 0 ? random.nextDouble(-chaos, chaos) : 0.0;
 
             // Spawn particle with velocity (using modern Paper API)
             world.spawnParticle(
