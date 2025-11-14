@@ -27,7 +27,7 @@ public final class SnowmanTransformListener implements Listener {
             int chance = ThreadLocalRandom.current().nextInt(100);
             if (chance < config.chancePercent()) {
                 event.setCancelled(true);
-                event.getLocation().getWorld().spawnEntity(event.getLocation(), EntityType.SNOWMAN);
+                event.getLocation().getWorld().spawnEntity(event.getLocation(), EntityType.SNOW_GOLEM);
             }
         }
     }

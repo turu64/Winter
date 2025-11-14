@@ -9,7 +9,7 @@ import org.bukkit.event.entity.EntityTargetEvent;
 public final class SnowmanTargetListener implements Listener {
     @EventHandler
     public void onSnowmanTarget(EntityTargetEvent event) {
-        if (event.getTarget() != null && event.getTarget().getType() == EntityType.SNOWMAN) {
+        if (event.getTarget() != null && event.getTarget().getType() == EntityType.SNOW_GOLEM) {
             event.setCancelled(true);
         }
     }

@@ -2,6 +2,7 @@ package org.mineacademy.winter.listener;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -189,11 +190,13 @@ public final class ChestListener implements Listener {
      */
     @EventHandler(priority = EventPriority.NORMAL)
     public void onSignChange(@NotNull SignChangeEvent event) {
-        String line0 = event.line(0);
-        if (line0 == null) {
+        Component line0Component = event.line(0);
+        if (line0Component == null) {
             return;
         }
 
+        // Convert Component to plain text
+        String line0 = PlainTextComponentSerializer.plainText().serialize(line0Component);
         Player player = event.getPlayer();
 
         // Check for [gift] sign
@@ -213,7 +216,9 @@ public final class ChestListener implements Listener {
             }
 
             // Create gift chest
-            boolean isPublic = event.line(1) != null && event.line(1).equalsIgnoreCase("public");
+            Component line1Component = event.line(1);
+            String line1 = line1Component != null ? PlainTextComponentSerializer.plainText().serialize(line1Component) : "";
+            boolean isPublic = line1.equalsIgnoreCase("public");
             List<UUID> allowed = isPublic ? List.of() : List.of(player.getUniqueId());
 
             GiftChest chest = new GiftChest(

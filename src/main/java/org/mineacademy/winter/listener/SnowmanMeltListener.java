@@ -9,7 +9,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 public final class SnowmanMeltListener implements Listener {
     @EventHandler
     public void onSnowmanDamage(EntityDamageEvent event) {
-        if (event.getEntity().getType() == EntityType.SNOWMAN &&
+        if (event.getEntity().getType() == EntityType.SNOW_GOLEM &&
             event.getCause() == EntityDamageEvent.DamageCause.MELTING) {
             event.setCancelled(true);
         }
