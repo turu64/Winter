@@ -4,10 +4,12 @@ import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.mineacademy.winter.Winter;
 
+import java.io.File;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -144,9 +146,12 @@ public final class WinterConfig {
      * Load configuration from file
      */
     public static void load(@NotNull Winter plugin) {
-        plugin.saveDefaultConfig();
-        plugin.reloadConfig();
-        config = plugin.getConfig();
+        // Save and load settings.yml instead of config.yml
+        File configFile = new File(plugin.getDataFolder(), "settings.yml");
+        if (!configFile.exists()) {
+            plugin.saveResource("settings.yml", false);
+        }
+        config = YamlConfiguration.loadConfiguration(configFile);
 
         try {
             currentConfig = new Config(
