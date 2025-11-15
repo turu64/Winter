@@ -199,6 +199,11 @@ public final class AsyncTerrainTask implements Runnable {
             return;
         }
 
+        // Check for fragile entities/blocks that would be destroyed by snow
+        if (hasFragileEntitiesOrBlocks(above, topBlock)) {
+            return;
+        }
+
         Material topType = topBlock.getType();
 
         // Freeze water
@@ -545,6 +550,111 @@ public final class AsyncTerrainTask implements Runnable {
     public String getStats() {
         return String.format("Blocks: %d, Async Ops: %d, Cache Size: %d",
             totalBlocksProcessed, totalAsyncOps, processedChunks.size());
+    }
+
+    /**
+     * Check if there are fragile entities or blocks that would be destroyed by snow placement
+     * This includes item frames, paintings, armor stands, torches, levers, buttons, etc.
+     *
+     * @param snowLocation Where snow would be placed
+     * @param baseBlock The block below where snow would be placed
+     * @return true if there are fragile entities/blocks (don't place snow), false otherwise
+     */
+    private boolean hasFragileEntitiesOrBlocks(@NotNull Block snowLocation, @NotNull Block baseBlock) {
+        // Check for entities at the snow location and on the base block
+        // Entities like item frames, paintings can be on walls adjacent to these blocks
+        for (org.bukkit.entity.Entity entity : snowLocation.getWorld().getNearbyEntities(
+            snowLocation.getLocation().add(0.5, 0.5, 0.5), 1.0, 1.0, 1.0)) {
+
+            switch (entity.getType()) {
+                // Wall-mounted entities
+                case ITEM_FRAME, GLOW_ITEM_FRAME, PAINTING -> {
+                    return true; // Don't place snow near these
+                }
+                // Ground entities
+                case ARMOR_STAND -> {
+                    // Check if armor stand is at or near the snow location
+                    if (entity.getLocation().getBlockY() >= baseBlock.getY() &&
+                        entity.getLocation().getBlockY() <= snowLocation.getY()) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Check for fragile blocks on the base block and adjacent blocks
+        // These blocks can be destroyed when snow is placed
+        if (isFragileBlock(baseBlock)) {
+            return true;
+        }
+
+        // Check adjacent blocks for wall-mounted fragile blocks
+        for (BlockFace face : new BlockFace[]{
+            BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST
+        }) {
+            Block adjacent = baseBlock.getRelative(face);
+            if (isFragileBlock(adjacent)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a block is fragile and could be destroyed by snow placement
+     *
+     * @param block The block to check
+     * @return true if the block is fragile
+     */
+    private boolean isFragileBlock(@NotNull Block block) {
+        Material type = block.getType();
+        String name = type.name();
+
+        // Torch variants
+        if (name.contains("TORCH") || name.contains("LANTERN")) {
+            return true;
+        }
+
+        // Redstone components
+        if (name.contains("LEVER") || name.contains("BUTTON") ||
+            name.contains("PRESSURE_PLATE") || name.contains("TRIPWIRE")) {
+            return true;
+        }
+
+        // Signs and banners
+        if (name.contains("SIGN") || name.contains("BANNER")) {
+            return true;
+        }
+
+        // Rails
+        if (name.contains("RAIL")) {
+            return true;
+        }
+
+        // Flowers and plants
+        if (name.contains("FLOWER") || name.contains("TULIP") ||
+            name.contains("ORCHID") || name.contains("ALLIUM") ||
+            name.contains("DANDELION") || name.contains("POPPY") ||
+            name.contains("ROSE") || name.contains("LILY")) {
+            return true;
+        }
+
+        // Carpets
+        if (name.contains("CARPET")) {
+            return true;
+        }
+
+        // Other specific fragile blocks
+        return switch (type) {
+            case DEAD_BUSH, GRASS, TALL_GRASS, FERN, LARGE_FERN,
+                 SEAGRASS, TALL_SEAGRASS, KELP, KELP_PLANT,
+                 WHEAT, CARROTS, POTATOES, BEETROOTS,
+                 SWEET_BERRY_BUSH, CAKE, CANDLE,
+                 REDSTONE_WIRE, REPEATER, COMPARATOR,
+                 SCAFFOLDING, TURTLE_EGG, SNOW -> true;
+            default -> false;
+        };
     }
 
     /**
