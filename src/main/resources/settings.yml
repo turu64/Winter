@@ -164,7 +164,15 @@ Terrain:
     # Recommended: 3 for realistic deep snow
     Max_Height: 3
 
-    # Dot not place snow on the following blocks (material list, will match if contains):
+    # Do not place snow on the following blocks (material list, will match if contains):
+    # NOTE: The plugin also automatically protects these blocks:
+    #   - Interactive blocks: CHEST, BARREL, FURNACE, HOPPER, DISPENSER, DROPPER
+    #   - Crafting stations: All TABLEs (crafting, enchanting, etc.), ANVIL, LOOM, GRINDSTONE
+    #   - Fragile entities: Item frames, paintings, armor stands
+    #   - Fragile blocks: Torches, levers, buttons, flowers, carpets, rails
+    #   - Functional blocks: BEACON, BREWING_STAND, LECTERN, COMPOSTER, CAMPFIRE, BEEHIVE
+    #
+    # You can add additional blocks here to customize protection
     Do_Not_Place_On: [ICE, BARRIER, FENCE, STEP, SLAB, AIR, WATER, LAVA, SIGN, PANE, PLATE, STAIRS, TRAPDOOR]
 
     # What biomes should we ignore?

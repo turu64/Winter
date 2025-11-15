@@ -507,9 +507,10 @@ public final class TerrainTask implements Runnable {
 
     /**
      * Check if a block is fragile and could be destroyed by snow placement
+     * Also includes interactive blocks that would become non-functional
      *
      * @param block The block to check
-     * @return true if the block is fragile
+     * @return true if the block is fragile or interactive
      */
     private boolean isFragileBlock(@NotNull Block block) {
         Material type = block.getType();
@@ -549,14 +550,37 @@ public final class TerrainTask implements Runnable {
             return true;
         }
 
-        // Other specific fragile blocks
+        // Interactive blocks that need access (chest, furnace, etc.)
+        if (name.contains("CHEST") || name.contains("BARREL") ||
+            name.contains("SHULKER_BOX") || name.contains("FURNACE") ||
+            name.contains("SMOKER") || name.contains("BLAST_FURNACE") ||
+            name.contains("HOPPER") || name.contains("DROPPER") ||
+            name.contains("DISPENSER")) {
+            return true;
+        }
+
+        // Crafting/Work stations
+        if (name.contains("TABLE") || name.contains("ANVIL") ||
+            name.contains("LOOM") || name.contains("GRINDSTONE") ||
+            name.contains("STONECUTTER")) {
+            return true;
+        }
+
+        // Other specific fragile/interactive blocks
         return switch (type) {
+            // Fragile blocks
             case DEAD_BUSH, GRASS, TALL_GRASS, FERN, LARGE_FERN,
                  SEAGRASS, TALL_SEAGRASS, KELP, KELP_PLANT,
                  WHEAT, CARROTS, POTATOES, BEETROOTS,
                  SWEET_BERRY_BUSH, CAKE, CANDLE,
                  REDSTONE_WIRE, REPEATER, COMPARATOR,
-                 SCAFFOLDING, TURTLE_EGG, SNOW -> true;
+                 SCAFFOLDING, TURTLE_EGG, SNOW,
+                 // Interactive blocks
+                 BEACON, BREWING_STAND, LECTERN, COMPOSTER,
+                 CAULDRON, WATER_CAULDRON, LAVA_CAULDRON, POWDER_SNOW_CAULDRON,
+                 RESPAWN_ANCHOR, LODESTONE, FLOWER_POT,
+                 DAYLIGHT_DETECTOR, CAMPFIRE, SOUL_CAMPFIRE,
+                 BEE_NEST, BEEHIVE, BELL -> true;
             default -> false;
         };
     }
