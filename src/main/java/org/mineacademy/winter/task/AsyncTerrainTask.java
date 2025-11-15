@@ -352,15 +352,21 @@ public final class AsyncTerrainTask implements Runnable {
                 }
             }
 
-            // Melt snow blocks
+            // Melt snow blocks - convert to 8 layers instead of deleting
             if (topBlock.getType() == Material.SNOW_BLOCK) {
                 // Check if this snow was placed by the plugin
                 if (!SnowMetadataManager.isPluginPlaced(topBlock)) {
                     return; // Skip player-placed snow
                 }
 
-                topBlock.setType(Material.AIR);
-                SnowMetadataManager.unmarkBlock(topBlock);
+                // Convert snow block to 8 layers of snow (gradual melting)
+                topBlock.setType(Material.SNOW);
+                if (topBlock.getBlockData() instanceof Snow snow) {
+                    snow.setLayers(8);
+                    topBlock.setBlockData(snow);
+                }
+                // Keep metadata (still plugin-placed)
+                SnowMetadataManager.markAsPluginPlaced(topBlock);
             }
 
             // Thaw ice
@@ -390,8 +396,13 @@ public final class AsyncTerrainTask implements Runnable {
                 }
             }
 
+            // Melt snow blocks - convert to 8 layers instead of deleting
             if (topBlock.getType() == Material.SNOW_BLOCK) {
-                topBlock.setType(Material.AIR);
+                topBlock.setType(Material.SNOW);
+                if (topBlock.getBlockData() instanceof Snow snow) {
+                    snow.setLayers(8);
+                    topBlock.setBlockData(snow);
+                }
             }
 
             if (config.freezeWater() && topBlock.getType() == Material.ICE) {
