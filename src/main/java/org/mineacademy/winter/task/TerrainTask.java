@@ -212,10 +212,9 @@ public final class TerrainTask implements Runnable {
 
     /**
      * Melt snow at a location (respects PDC metadata)
+     * Melts from the topmost snow layer for multi-block stacks
      */
     private void meltSnow(@NotNull Block topBlock, @NotNull WinterConfig.SnowGenerationConfig config) {
-        Block above = topBlock.getRelative(BlockFace.UP);
-
         // Check if we should ignore this snow (natural snow in snowy biomes)
         if (config.onlyMeltUnnaturalSnow()) {
             if (topBlock.getBiome().name().contains("SNOWY") ||
@@ -226,50 +225,27 @@ public final class TerrainTask implements Runnable {
             }
         }
 
-        // Check if we should only melt plugin-placed snow
-        if (config.onlyMeltPluginSnow()) {
-            // Melt snow layers
-            if (above.getType() == Material.SNOW) {
-                // Check if this snow was placed by the plugin
-                if (!SnowMetadataManager.isPluginPlaced(above)) {
-                    return; // Skip player-placed snow
-                }
+        // Find the topmost snow block/layer above this block
+        Block topmostSnow = null;
+        Block currentBlock = topBlock.getRelative(BlockFace.UP);
+        int maxHeight = config.maxHeight();
 
-                if (above.getBlockData() instanceof Snow snow) {
-                    if (snow.getLayers() > 1) {
-                        snow.setLayers(snow.getLayers() - 1);
-                        above.setBlockData(snow);
-                        // Keep metadata
-                        SnowMetadataManager.markAsPluginPlaced(above);
-                    } else {
-                        above.setType(Material.AIR);
-                        // Remove metadata
-                        SnowMetadataManager.unmarkBlock(above);
-                    }
-                }
+        // Search upward for snow (up to maxHeight blocks)
+        for (int i = 0; i < maxHeight; i++) {
+            Material type = currentBlock.getType();
+            if (type == Material.SNOW || type == Material.SNOW_BLOCK) {
+                topmostSnow = currentBlock;
+                currentBlock = currentBlock.getRelative(BlockFace.UP);
+            } else {
+                break; // Hit non-snow block or air
             }
+        }
 
-            // Melt snow blocks - convert to 8 layers instead of deleting
-            if (topBlock.getType() == Material.SNOW_BLOCK) {
-                // Check if this snow was placed by the plugin
-                if (!SnowMetadataManager.isPluginPlaced(topBlock)) {
-                    return; // Skip player-placed snow
-                }
-
-                // Convert snow block to 8 layers of snow (gradual melting)
-                topBlock.setType(Material.SNOW);
-                if (topBlock.getBlockData() instanceof Snow snow) {
-                    snow.setLayers(8);
-                    topBlock.setBlockData(snow);
-                }
-                // Keep metadata (still plugin-placed)
-                SnowMetadataManager.markAsPluginPlaced(topBlock);
-            }
-
-            // Thaw ice
+        // If no snow found above, nothing to melt
+        if (topmostSnow == null) {
+            // Check if topBlock itself is ice that needs thawing
             if (config.freezeWater() && topBlock.getType() == Material.ICE) {
-                // Check if this ice was frozen by the plugin
-                if (!SnowMetadataManager.isPluginPlaced(topBlock)) {
+                if (config.onlyMeltPluginSnow() && !SnowMetadataManager.isPluginPlaced(topBlock)) {
                     return; // Skip player-placed ice
                 }
 
@@ -278,36 +254,49 @@ public final class TerrainTask implements Runnable {
                     water.setLevel(0);
                     topBlock.setBlockData(water);
                 }
-                SnowMetadataManager.unmarkBlock(topBlock);
+                if (config.onlyMeltPluginSnow()) {
+                    SnowMetadataManager.unmarkBlock(topBlock);
+                }
             }
-        } else {
-            // Original behavior: melt all snow
-            if (above.getType() == Material.SNOW) {
-                if (above.getBlockData() instanceof Snow snow) {
-                    if (snow.getLayers() > 1) {
-                        snow.setLayers(snow.getLayers() - 1);
-                        above.setBlockData(snow);
-                    } else {
-                        above.setType(Material.AIR);
+            return;
+        }
+
+        // Check metadata if onlyMeltPluginSnow is enabled
+        if (config.onlyMeltPluginSnow()) {
+            if (!SnowMetadataManager.isPluginPlaced(topmostSnow)) {
+                return; // Skip player-placed snow
+            }
+        }
+
+        // Melt the topmost snow
+        if (topmostSnow.getType() == Material.SNOW) {
+            // Reduce snow layers
+            if (topmostSnow.getBlockData() instanceof Snow snow) {
+                if (snow.getLayers() > 1) {
+                    snow.setLayers(snow.getLayers() - 1);
+                    topmostSnow.setBlockData(snow);
+                    // Keep metadata
+                    if (config.onlyMeltPluginSnow()) {
+                        SnowMetadataManager.markAsPluginPlaced(topmostSnow);
+                    }
+                } else {
+                    topmostSnow.setType(Material.AIR);
+                    // Remove metadata
+                    if (config.onlyMeltPluginSnow()) {
+                        SnowMetadataManager.unmarkBlock(topmostSnow);
                     }
                 }
             }
-
-            // Melt snow blocks - convert to 8 layers instead of deleting
-            if (topBlock.getType() == Material.SNOW_BLOCK) {
-                topBlock.setType(Material.SNOW);
-                if (topBlock.getBlockData() instanceof Snow snow) {
-                    snow.setLayers(8);
-                    topBlock.setBlockData(snow);
-                }
+        } else if (topmostSnow.getType() == Material.SNOW_BLOCK) {
+            // Convert snow block to 8 layers (gradual melting)
+            topmostSnow.setType(Material.SNOW);
+            if (topmostSnow.getBlockData() instanceof Snow snow) {
+                snow.setLayers(8);
+                topmostSnow.setBlockData(snow);
             }
-
-            if (config.freezeWater() && topBlock.getType() == Material.ICE) {
-                topBlock.setType(Material.WATER);
-                if (topBlock.getBlockData() instanceof Levelled water) {
-                    water.setLevel(0);
-                    topBlock.setBlockData(water);
-                }
+            // Keep metadata
+            if (config.onlyMeltPluginSnow()) {
+                SnowMetadataManager.markAsPluginPlaced(topmostSnow);
             }
         }
     }
@@ -346,8 +335,9 @@ public final class TerrainTask implements Runnable {
             return false;
         }
 
-        // Block must be solid (or water for freezing)
-        return topBlock.getType().isSolid() || topBlock.getType() == Material.WATER;
+        // Only place snow on opaque blocks (blocks that completely block light)
+        // This prevents snow from accumulating on glass, leaves, ice, etc.
+        return topBlock.getType().isOccluding() || topBlock.getType() == Material.WATER;
     }
 
     /**
