@@ -19,6 +19,8 @@ import java.util.logging.Level;
 /**
  * WorldGuard integration for Winter plugin
  * Handles region flag checks for snow-fall protection
+ *
+ * Note: Uses WorldGuard's standard 'snow-fall' flag (available in WG 7.0+)
  */
 public final class WorldGuardHook {
 
@@ -69,13 +71,13 @@ public final class WorldGuardHook {
                 return;
             }
 
-            // Get the snow-fall flag from WorldGuard's registry
+            // Get WorldGuard's standard snow-fall flag
             FlagRegistry registry = WorldGuard.getInstance().getFlagRegistry();
             snowFallFlag = (StateFlag) registry.get("snow-fall");
 
             if (snowFallFlag == null) {
                 plugin.log(Level.WARNING, "WorldGuard snow-fall flag not found. " +
-                    "Make sure you're using WorldGuard 7.0+");
+                    "Make sure you're using WorldGuard 7.0.0 or higher.");
                 return;
             }
 
