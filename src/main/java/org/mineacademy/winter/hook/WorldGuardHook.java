@@ -40,7 +40,7 @@ public final class WorldGuardHook {
      * Register custom WorldGuard flags during onLoad() phase
      * Must be called before WorldGuard's onEnable()
      */
-    public static void registerCustomFlags(@NotNull Winter plugin) {
+    public static void registerCustomFlags(@NotNull org.mineacademy.winter.core.WinterPlugin plugin) {
         try {
             // Check if WorldGuard is present
             if (plugin.getServer().getPluginManager().getPlugin("WorldGuard") == null) {

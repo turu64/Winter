@@ -604,7 +604,7 @@ public final class TerrainTask implements Runnable {
         // Other specific fragile/interactive blocks
         return switch (type) {
             // Fragile blocks
-            case DEAD_BUSH, GRASS, TALL_GRASS, FERN, LARGE_FERN,
+            case DEAD_BUSH, SHORT_GRASS, TALL_GRASS, FERN, LARGE_FERN,
                  SEAGRASS, TALL_SEAGRASS, KELP, KELP_PLANT,
                  WHEAT, CARROTS, POTATOES, BEETROOTS,
                  SWEET_BERRY_BUSH, CAKE, CANDLE,
