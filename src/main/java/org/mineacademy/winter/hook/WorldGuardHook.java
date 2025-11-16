@@ -5,6 +5,7 @@ import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.IntegerFlag;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
@@ -21,16 +22,48 @@ import java.util.logging.Level;
  * Handles region flag checks for snow-fall protection
  *
  * Note: Uses WorldGuard's standard 'snow-fall' flag (available in WG 7.0+)
+ * Custom flag: 'winter-snowboost' allows configuring max snow height per region
  */
 public final class WorldGuardHook {
 
     private static WorldGuardHook instance;
+    private static IntegerFlag winterSnowBoostFlag; // Custom flag registered during onLoad
     private final Winter plugin;
     private boolean enabled = false;
     private StateFlag snowFallFlag;
 
     private WorldGuardHook(@NotNull Winter plugin) {
         this.plugin = plugin;
+    }
+
+    /**
+     * Register custom WorldGuard flags during onLoad() phase
+     * Must be called before WorldGuard's onEnable()
+     */
+    public static void registerCustomFlags(@NotNull Winter plugin) {
+        try {
+            // Check if WorldGuard is present
+            if (plugin.getServer().getPluginManager().getPlugin("WorldGuard") == null) {
+                return;
+            }
+
+            FlagRegistry registry = WorldGuard.getInstance().getFlagRegistry();
+
+            // Try to get existing flag first
+            winterSnowBoostFlag = (IntegerFlag) registry.get("winter-snowboost");
+
+            if (winterSnowBoostFlag == null) {
+                // Register new custom flag
+                winterSnowBoostFlag = new IntegerFlag("winter-snowboost");
+                registry.register(winterSnowBoostFlag);
+                plugin.log(Level.INFO, "Registered custom 'winter-snowboost' flag with WorldGuard");
+            } else {
+                plugin.log(Level.INFO, "Found existing 'winter-snowboost' flag");
+            }
+
+        } catch (Exception e) {
+            plugin.log(Level.WARNING, "Could not register custom WorldGuard flags: " + e.getMessage());
+        }
     }
 
     /**
@@ -144,6 +177,49 @@ public final class WorldGuardHook {
     }
 
     /**
+     * Get the maximum snow height for this location
+     * Takes into account both snow-fall and winter-snowboost flags
+     *
+     * @param block The block to check
+     * @param defaultMaxHeight The default max height from config
+     * @return The max height for this location, or -1 if snow cannot fall here
+     */
+    public int getMaxSnowHeight(@NotNull Block block, int defaultMaxHeight) {
+        if (!enabled || snowFallFlag == null) {
+            return defaultMaxHeight; // WorldGuard not enabled, use default
+        }
+
+        try {
+            Location weLocation = BukkitAdapter.adapt(block.getLocation());
+            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+            RegionQuery query = container.createQuery();
+            ApplicableRegionSet regions = query.getApplicableRegions(weLocation);
+
+            // First check snow-fall flag - if DENY, snow cannot fall at all
+            StateFlag.State snowFallState = regions.queryState(null, snowFallFlag);
+            if (snowFallState == StateFlag.State.DENY) {
+                return -1; // snow-fall: deny takes precedence
+            }
+
+            // Check winter-snowboost flag
+            if (winterSnowBoostFlag != null) {
+                Integer boostHeight = regions.queryValue(null, winterSnowBoostFlag);
+                if (boostHeight != null && boostHeight > 0) {
+                    return boostHeight; // Use region-specific max height
+                }
+            }
+
+            // No boost flag set, use default
+            return defaultMaxHeight;
+
+        } catch (Exception e) {
+            plugin.log(Level.WARNING, "Error checking WorldGuard winter-snowboost flag at " +
+                block.getLocation(), e);
+            return defaultMaxHeight; // Default on error
+        }
+    }
+
+    /**
      * Disable the integration (for testing or reload)
      */
     public void disable() {
@@ -155,7 +231,8 @@ public final class WorldGuardHook {
      * Get debug information about the current state
      */
     public String getDebugInfo() {
-        return String.format("WorldGuard Integration: enabled=%s, snowFallFlag=%s",
-            enabled, snowFallFlag != null ? "present" : "null");
+        return String.format("WorldGuard Integration: enabled=%s, snowFallFlag=%s, winterSnowBoostFlag=%s",
+            enabled, snowFallFlag != null ? "present" : "null",
+            winterSnowBoostFlag != null ? "present" : "null");
     }
 }

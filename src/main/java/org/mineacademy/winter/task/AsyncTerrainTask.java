@@ -217,9 +217,15 @@ public final class AsyncTerrainTask implements Runnable {
             return;
         }
 
+        // Get max snow height for this location (respects WorldGuard winter-snowboost flag)
+        int maxHeight = getMaxSnowHeightForLocation(above, config.maxHeight());
+        if (maxHeight < 0) {
+            return; // snow-fall: deny, cannot place snow at all
+        }
+
         // Check current snow height before placing
         int currentHeight = getSnowHeight(topBlock);
-        if (currentHeight >= config.maxHeight()) {
+        if (currentHeight >= maxHeight) {
             return; // Already at max height
         }
 
@@ -258,11 +264,17 @@ public final class AsyncTerrainTask implements Runnable {
             return;
         }
 
+        // Get max snow height for this location (respects WorldGuard winter-snowboost flag)
+        int maxHeight = getMaxSnowHeightForLocation(snowBlock, config.maxHeight());
+        if (maxHeight < 0) {
+            return; // snow-fall: deny, cannot grow snow
+        }
+
         int currentLayers = snow.getLayers();
         if (currentLayers >= snow.getMaximumLayers()) {
             // Check current snow height before converting to snow block
             int currentHeight = getSnowHeight(snowBlock);
-            if (currentHeight >= config.maxHeight()) {
+            if (currentHeight >= maxHeight) {
                 return; // Already at max height, don't grow further
             }
 
@@ -273,7 +285,7 @@ public final class AsyncTerrainTask implements Runnable {
 
             // If not at max height, allow snow to continue growing on top
             Block above = snowBlock.getRelative(BlockFace.UP);
-            if (above.getType() == Material.AIR && currentHeight + 1 < config.maxHeight()) {
+            if (above.getType() == Material.AIR && currentHeight + 1 < maxHeight) {
                 above.setType(Material.SNOW);
                 if (above.getBlockData() instanceof Snow newSnow) {
                     newSnow.setLayers(1);
@@ -333,10 +345,13 @@ public final class AsyncTerrainTask implements Runnable {
             }
         }
 
+        // Get max snow height for this location to search for snow blocks
+        // Use absolute value to handle snow-fall: deny case (we can still melt existing snow)
+        int maxHeight = Math.abs(getMaxSnowHeightForLocation(topBlock, config.maxHeight()));
+
         // Find the topmost snow block/layer above this block
         Block topmostSnow = null;
         Block currentBlock = topBlock.getRelative(BlockFace.UP);
-        int maxHeight = config.maxHeight();
 
         // Search upward for snow (up to maxHeight blocks)
         for (int i = 0; i < maxHeight; i++) {
@@ -506,6 +521,26 @@ public final class AsyncTerrainTask implements Runnable {
         }
 
         return hook.canSnowFallFast(block);
+    }
+
+    /**
+     * Get the maximum snow height for a location, respecting WorldGuard's winter-snowboost flag
+     *
+     * @param block The block to check
+     * @param defaultMaxHeight The default max height from config
+     * @return Max height for this location, or -1 if snow-fall: deny
+     */
+    private int getMaxSnowHeightForLocation(@NotNull Block block, int defaultMaxHeight) {
+        if (!org.mineacademy.winter.hook.WorldGuardHook.isEnabled()) {
+            return defaultMaxHeight;
+        }
+
+        var hook = org.mineacademy.winter.hook.WorldGuardHook.getInstance();
+        if (hook == null) {
+            return defaultMaxHeight;
+        }
+
+        return hook.getMaxSnowHeight(block, defaultMaxHeight);
     }
 
     /**

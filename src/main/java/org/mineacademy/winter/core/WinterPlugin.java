@@ -20,6 +20,18 @@ public abstract class WinterPlugin extends JavaPlugin {
     private static WinterPlugin instance;
 
     @Override
+    public final void onLoad() {
+        instance = this;
+
+        try {
+            // Register WorldGuard custom flags during onLoad phase
+            org.mineacademy.winter.hook.WorldGuardHook.registerCustomFlags(this);
+        } catch (Exception e) {
+            log(Level.WARNING, "Failed to register WorldGuard custom flags", e);
+        }
+    }
+
+    @Override
     public final void onEnable() {
         instance = this;
 
