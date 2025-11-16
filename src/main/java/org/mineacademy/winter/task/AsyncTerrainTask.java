@@ -349,11 +349,17 @@ public final class AsyncTerrainTask implements Runnable {
         // Use absolute value to handle snow-fall: deny case (we can still melt existing snow)
         int maxHeight = Math.abs(getMaxSnowHeightForLocation(topBlock, config.maxHeight()));
 
-        // Find the topmost snow block/layer above this block
+        // Find the topmost snow block/layer
+        // Start from topBlock if it's snow, otherwise start from above it
         Block topmostSnow = null;
-        Block currentBlock = topBlock.getRelative(BlockFace.UP);
+        Block currentBlock = topBlock;
 
-        // Search upward for snow (up to maxHeight blocks)
+        // If topBlock is not snow, start searching from above
+        if (topBlock.getType() != Material.SNOW && topBlock.getType() != Material.SNOW_BLOCK) {
+            currentBlock = topBlock.getRelative(BlockFace.UP);
+        }
+
+        // Search upward for the topmost snow (up to maxHeight blocks)
         for (int i = 0; i < maxHeight; i++) {
             Material type = currentBlock.getType();
             if (type == Material.SNOW || type == Material.SNOW_BLOCK) {
