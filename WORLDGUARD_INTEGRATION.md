@@ -4,7 +4,7 @@ Winter plugin seamlessly integrates with WorldGuard to provide fine-grained cont
 
 ## Overview
 
-The integration uses WorldGuard's native `snow-fall` flag to control where snow can accumulate. This allows you to protect specific areas (like spawn, buildings, or event areas) from snow while still enjoying winter effects elsewhere.
+The integration uses WorldGuard's native `snow-fall` flag to control where snow can accumulate, and a custom `winter-snowboost` flag to control maximum snow height per region. This allows you to protect specific areas (like spawn, buildings, or event areas) from snow while still enjoying winter effects elsewhere.
 
 ## Requirements
 
@@ -41,6 +41,16 @@ You'll see this in your console if integration is successful:
 ```
 /region flag <region-name> snow-fall -h
 ```
+
+#### Set custom max snow height for a region:
+```
+/region flag <region-name> winter-snowboost 2
+```
+This sets the maximum snow height to 2 blocks for this region. Valid values are 1-3 (capped at 3).
+
+**Important Notes:**
+- The `winter-snowboost` flag maximum value is 3. Even if you set a higher value (from old plugin versions), the actual behavior will cap at 3 blocks maximum.
+- The `winter-snowboost` flag **overrides** the `Multi_Layer` config setting. Even if `Multi_Layer: false` in your config, regions with `winter-snowboost > 1` will allow multi-layer snow growth up to the specified height.
 
 ### Common Scenarios
 

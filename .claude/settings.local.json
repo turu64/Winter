@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn clean package:*)",
+      "Bash(echo:*)",
+      "Bash(java:*)",
+      "Bash(where:*)",
+      "Bash(export JAVA_HOME:*)",
+      "Bash(mvn clean:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

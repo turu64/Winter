@@ -109,6 +109,10 @@ public final class TerrainTask implements Runnable {
             return; // Already at max height
         }
 
+        // Check if we should enable multi-layer behavior
+        // Enable if either config.multiLayer() is true OR winter-snowboost flag allows height > 1
+        boolean allowMultiLayer = config.multiLayer() || maxHeight > 1;
+
         // Freeze water
         if (config.freezeWater() && topType == Material.WATER) {
             // Check freeze ignore rules
@@ -134,12 +138,12 @@ public final class TerrainTask implements Runnable {
 
             // Mark snow as plugin-placed
             SnowMetadataManager.markAsPluginPlaced(above);
-        } else if (config.multiLayer() && above.getType() == Material.SNOW) {
+        } else if (allowMultiLayer && above.getType() == Material.SNOW) {
             // Grow existing snow
-            growSnow(above, config);
+            growSnow(above, config, maxHeight);
         }
         // Allow stacking on SNOW_BLOCK for multi-block height
-        else if (config.multiLayer() && topType == Material.SNOW_BLOCK && above.getType() == Material.AIR) {
+        else if (allowMultiLayer && topType == Material.SNOW_BLOCK && above.getType() == Material.AIR) {
             above.setType(Material.SNOW);
             if (above.getBlockData() instanceof Snow snow) {
                 snow.setLayers(1);
@@ -152,15 +156,13 @@ public final class TerrainTask implements Runnable {
     }
 
     /**
-     * Grow snow layers
+     * Grow snow layers (with pre-calculated max height)
      */
-    private void growSnow(@NotNull Block snowBlock, @NotNull WinterConfig.SnowGenerationConfig config) {
+    private void growSnow(@NotNull Block snowBlock, @NotNull WinterConfig.SnowGenerationConfig config, int maxHeight) {
         if (!(snowBlock.getBlockData() instanceof Snow snow)) {
             return;
         }
 
-        // Get max snow height for this location (respects WorldGuard winter-snowboost flag)
-        int maxHeight = getMaxSnowHeightForLocation(snowBlock, config.maxHeight());
         if (maxHeight < 0) {
             return; // snow-fall: deny, cannot grow snow
         }

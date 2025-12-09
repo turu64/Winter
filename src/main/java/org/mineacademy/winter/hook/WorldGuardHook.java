@@ -205,7 +205,9 @@ public final class WorldGuardHook {
             if (winterSnowBoostFlag != null) {
                 Integer boostHeight = regions.queryValue(null, winterSnowBoostFlag);
                 if (boostHeight != null && boostHeight > 0) {
-                    return boostHeight; // Use region-specific max height
+                    // Limit winter-snowboost to maximum of 3
+                    // Even if old versions set higher values, cap at 3
+                    return Math.min(boostHeight, 3);
                 }
             }
 

@@ -229,6 +229,10 @@ public final class AsyncTerrainTask implements Runnable {
             return; // Already at max height
         }
 
+        // Check if we should enable multi-layer behavior
+        // Enable if either config.multiLayer() is true OR winter-snowboost flag allows height > 1
+        boolean allowMultiLayer = config.multiLayer() || maxHeight > 1;
+
         // Place snow layer on AIR or on top of SNOW_BLOCK (for multi-block stacking)
         if (above.getType() == Material.AIR) {
             above.setType(Material.SNOW);
@@ -241,9 +245,9 @@ public final class AsyncTerrainTask implements Runnable {
             // Mark snow as plugin-placed (important!)
             SnowMetadataManager.markAsPluginPlaced(above);
 
-        } else if (config.multiLayer() && above.getType() == Material.SNOW) {
-            growSnow(above, config);
-        } else if (config.multiLayer() && topType == Material.SNOW_BLOCK && above.getType() == Material.AIR) {
+        } else if (allowMultiLayer && above.getType() == Material.SNOW) {
+            growSnow(above, config, maxHeight);
+        } else if (allowMultiLayer && topType == Material.SNOW_BLOCK && above.getType() == Material.AIR) {
             // Allow snow to stack on top of snow blocks (for multi-block height)
             above.setType(Material.SNOW);
 
@@ -257,15 +261,13 @@ public final class AsyncTerrainTask implements Runnable {
     }
 
     /**
-     * Grow snow layers
+     * Grow snow layers (with pre-calculated max height)
      */
-    private void growSnow(@NotNull Block snowBlock, @NotNull WinterConfig.SnowGenerationConfig config) {
+    private void growSnow(@NotNull Block snowBlock, @NotNull WinterConfig.SnowGenerationConfig config, int maxHeight) {
         if (!(snowBlock.getBlockData() instanceof Snow snow)) {
             return;
         }
 
-        // Get max snow height for this location (respects WorldGuard winter-snowboost flag)
-        int maxHeight = getMaxSnowHeightForLocation(snowBlock, config.maxHeight());
         if (maxHeight < 0) {
             return; // snow-fall: deny, cannot grow snow
         }
