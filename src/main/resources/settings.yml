@@ -115,9 +115,24 @@ Terrain:
     #
     # For example, after Christmas you may want to melt the snow instead.
     Melt: false
-    
+
     # Do not melt snow in naturally snowy biomes or above height 90?
+    # (Legacy mode - consider using Use_Snow_Registry for more reliable tracking)
     Only_Melt_Unnatural_Snow: true
+
+    # [RECOMMENDED for 1.18+] Use Snow Registry to track plugin-placed snow.
+    # This provides RELIABLE distinction between:
+    # - Plugin-placed snow: Tracked and CAN be melted
+    # - Natural snow: NOT tracked, protected from melting
+    # - Player-placed snow: NOT tracked, protected from melting
+    #
+    # This is essential for servers updating from older versions (e.g., 1.21.4 to 1.21.8)
+    # After enabling, run '/winter migrate <world>' to register existing plugin-placed snow.
+    Use_Snow_Registry: true
+
+    # Protect player-placed snow from being melted?
+    # Only works when Use_Snow_Registry is enabled.
+    Protect_Player_Placed: true
 
     # Transform water into ice or ice into water (when Melt is enabled)?
     Freeze_Water: true

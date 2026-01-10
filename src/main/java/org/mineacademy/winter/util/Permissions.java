@@ -9,6 +9,7 @@ public class Permissions {
 		public static final String SNOW = "winter.command.snow";
 		public static final String RELOAD = "winter.command.reload";
 		public static final String PSYCHO = "winter.command.psycho";
+		public static final String MIGRATE = "winter.command.migrate";
 	}
 
 	public static final class Chest {

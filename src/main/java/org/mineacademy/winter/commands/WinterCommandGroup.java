@@ -10,6 +10,7 @@ public final class WinterCommandGroup extends SimpleCommandGroup {
 		registerSubcommand(new SnowCommand());
 		registerSubcommand(new PsychoCommand());
 		registerSubcommand(new PopulateCommand());
+		registerSubcommand(new MigrateCommand());
 		registerSubcommand(new ReloadCommand());
 	}
 }

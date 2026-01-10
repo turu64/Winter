@@ -21,7 +21,9 @@ import org.mineacademy.winter.listener.SnowmanDamageListener;
 import org.mineacademy.winter.listener.SnowmanDealDamageListener;
 import org.mineacademy.winter.listener.SnowmanTargetListener;
 import org.mineacademy.winter.listener.SnowmanTransformListener;
+import org.mineacademy.winter.listener.SnowRegistryListener;
 import org.mineacademy.winter.listener.WinterListener;
+import org.mineacademy.winter.model.SnowRegistry;
 import org.mineacademy.winter.model.data.ChestData;
 import org.mineacademy.winter.model.data.PlayerData;
 import org.mineacademy.winter.model.task.TaskParticleSnow;
@@ -69,6 +71,13 @@ public class Winter extends SimplePlugin {
 	}
 
 	@Override
+	protected void onPluginStop() {
+		// Save all snow registry data
+		if (Settings.Terrain.SnowGeneration.USE_REGISTRY != null && Settings.Terrain.SnowGeneration.USE_REGISTRY)
+			SnowRegistry.getInstance().saveAll();
+	}
+
+	@Override
 	protected void onPluginReload() {
 		PlayerData.$();
 		ChestData.$();
@@ -92,6 +101,14 @@ public class Winter extends SimplePlugin {
 
 		if (!Settings.Terrain.PREVENT_MELTING.isEmpty())
 			registerEvents(new MeltingListener());
+
+		// Snow Registry for reliable snow tracking (1.18+)
+		if (Settings.Terrain.SnowGeneration.USE_REGISTRY) {
+			registerEvents(new SnowRegistryListener());
+			SnowRegistry.getInstance().loadAll();
+
+			Common.log("&fSnow Registry enabled - tracking " + SnowRegistry.getInstance().getTotalBlockCount() + " plugin-placed snow blocks");
+		}
 
 		if (!Settings.Weather.SNOW_STORM)
 			SnowStorm.cleanAll();

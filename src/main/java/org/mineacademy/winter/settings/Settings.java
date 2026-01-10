@@ -133,6 +133,8 @@ public final class Settings extends SimpleSettings {
 
 			public static Boolean ENABLED;
 			public static Boolean MELT, IGNORE_SNOWY;
+			public static Boolean USE_REGISTRY;
+			public static Boolean PROTECT_PLAYER_PLACED;
 			public static Integer PERIOD;
 			public static Integer RADIUS;
 			public static Boolean MULTI_LAYER;
@@ -149,6 +151,8 @@ public final class Settings extends SimpleSettings {
 				ENABLED = getBoolean("Enabled");
 				MELT = getBoolean("Melt");
 				IGNORE_SNOWY = getBoolean("Only_Melt_Unnatural_Snow");
+				USE_REGISTRY = getBoolean("Use_Snow_Registry");
+				PROTECT_PLAYER_PLACED = getBoolean("Protect_Player_Placed");
 				PERIOD = getInteger("Period_Ticks");
 				RADIUS = getInteger("Radius");
 				MULTI_LAYER = getBoolean("Multi_Layer");
